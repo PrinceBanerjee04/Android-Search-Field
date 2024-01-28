@@ -1,9 +1,12 @@
 package com.example.searchfieldcompose
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlin.concurrent.fixedRateTimer
 
 class MainViewModel: ViewModel() {
@@ -14,7 +17,7 @@ class MainViewModel: ViewModel() {
     private val _isSearching= MutableStateFlow(false);
     val isSearching=_isSearching.asStateFlow();
 
-    private val _persons= MutableStateFlow(listOf<Person>());
+    private val _persons= MutableStateFlow(allPersons);
     val persons=searchText
         .combine(_persons){ text, persons ->
             if(text.isBlank()){
@@ -25,6 +28,11 @@ class MainViewModel: ViewModel() {
                 }
             }
         }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            _persons.value
+        )
     fun onSearchTextChange(text: String){
         _searchText.value=text
     }
