@@ -2,11 +2,15 @@ package com.example.searchfieldcompose
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlin.concurrent.fixedRateTimer
 
 class MainViewModel: ViewModel() {
@@ -19,15 +23,19 @@ class MainViewModel: ViewModel() {
 
     private val _persons= MutableStateFlow(allPersons);
     val persons=searchText
+        .debounce(1000L)
+        .onEach { _isSearching.update { true } }
         .combine(_persons){ text, persons ->
             if(text.isBlank()){
                 persons
             }else{
+                delay(2000L)
                 persons.filter {
                     it.doesMatchSearchQuery(text)
                 }
             }
         }
+        .onEach { _isSearching.update { false } }
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),
